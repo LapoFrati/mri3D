@@ -53,23 +53,35 @@ def read_data_sets(train_dir, dtype=np.float32):
     pass
   data_sets = DataSets()
 
-  train_dirdata = os.path.join(train_dir, "DB-AD-CTRL.pkl")
-  test_dirdata= os.path.join(train_dir, "DB-MCIc-MCInc.pkl")
+  #train_dirdata = os.path.join(train_dir, "DB-AD-CTRL.pkl")
+  #test_dirdata = os.path.join(train_dir, "DB-MCIc-MCInc.pkl")
+  AD_CTRL_dir_data = os.path.join(train_dir, "DB-AD-CTRL.pkl")
+  MCIc_MCInc_dir_data = os.path.join(train_dir, "DB-MCIc-MCInc.pkl")
 
-  with open(train_dirdata, "rb") as train_fp, open(test_dirdata, "rb") as test_fp:
-      train_data = cp.load(train_fp)
-      train_images = np.array(train_data["xs"],dtype=dtype)
-      train_labels = np.array( map( lambda x : 0 if x == -1 else 1 , train_data["ys"]),dtype=dtype)
+  with open(AD_CTRL_dir_data, "rb") as AD_CTRL_fp, open(MCIc_MCInc_dir_data, "rb") as MCIc_MCInc_fp:
+      AD_CTRL_data = cp.load(AD_CTRL_fp)
+      AD_CTRL_images = np.array(AD_CTRL_data["xs"],dtype=dtype)
+      AD_CTRL_labels = np.array( map( lambda x : 0 if x == -1 else 1 , AD_CTRL_data["ys"]),dtype=dtype)
 
-      test_data = cp.load(test_fp)
-      test_images = np.array(test_data["xs"],dtype=dtype)
-      test_labes = np.array( map( lambda x : 0 if x == -1 else 1 , test_data["ys"]),dtype=dtype)
+      MCIc_MCInc_data = cp.load(MCIc_MCInc_fp)
+      MCIc_MCInc_images = np.array(MCIc_MCInc_data["xs"],dtype=dtype)
+      MCIc_MCInc_labes = np.array( map( lambda x : 0 if x == -1 else 1 , MCIc_MCInc_data["ys"]),dtype=dtype)
 
-      #testSplit = 1.0
-      #splitSize = int(test_images.shape[0] * testSplit)
+      splitfactor = 0.7
+      size = len(MCIc_MCInc_images)
+      splitSize = size * splitfactor
+
+      train_images = np.concatenate((AD_CTRL_images, MCIc_MCInc_images[0:splitSize]))
+      train_labels = np.concatenate((AD_CTRL_labels, MCIc_MCInc_labes[0:splitSize]))
+
+      test_images = MCIc_MCInc_images[splitSize:]
+      test_labes = MCIc_MCInc_labes[splitSize:]
+
+      valid_images = test_images
+      valid_labes = test_labes
 
       data_sets.train = DataSet(train_images, train_labels, dtype=dtype)
       data_sets.test = DataSet(test_images, test_labes, dtype=dtype)
-      data_sets.validation = DataSet(test_images, test_labes, dtype=dtype)
+      data_sets.validation = DataSet(valid_images, valid_labes, dtype=dtype)
 
       return data_sets
